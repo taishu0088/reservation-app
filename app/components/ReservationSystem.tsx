@@ -1,5 +1,5 @@
 "use client";
-
+import { supabase } from "@/lib/supabase";
 import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -70,6 +70,30 @@ export default function ReservationSystem() {
   const [returnTime, setReturnTime] = useState("12:00");
 
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  useEffect(() => {
+  const fetchReservations = async () => {
+    const { data, error } = await supabase
+      .from("reservation")
+      .select("*");
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setReservations(
+      data.map((r) => ({
+        id: r.id,
+        user: r.user,
+        car: r.car,
+        start: new Date(r.start_time),
+        end: new Date(r.end_time),
+      }))
+    );
+  };
+
+  fetchReservations();
+}, []);
 
   // 起動時に localStorage から予約を復元
   useEffect(() => {
@@ -119,7 +143,7 @@ export default function ReservationSystem() {
     return isFull ? "full" : "partial";
   };
 
-  const handleReserve = () => {
+  const handleReserve = async () => {
     const nowTs = new Date();
     if (!isLoggedIn || !dateRange?.from || !dateRange?.to) return;
 
@@ -138,10 +162,35 @@ export default function ReservationSystem() {
       return alert("その車種はすでに予約があります");
     }
 
-    setReservations((prev) => [
-      ...prev,
-      { id: newId(), user: currentUser, car: selectedCar, start, end },
-    ]);
+   const { error } = await supabase.from("reservation").insert([
+  {
+    user: currentUser,
+    car: selectedCar,
+    start_time: start.toISOString(),
+    end_time: end.toISOString(),
+  },
+]);
+
+if (error) {
+  alert("予約の保存に失敗しました");
+  return;
+}
+
+// 再読み込み
+const { data } = await supabase.from("reservation").select("*");
+
+if (data) {
+  setReservations(
+    data.map((r) => ({
+      id: r.id,
+      user: r.user,
+      car: r.car,
+      start: new Date(r.start_time),
+      end: new Date(r.end_time),
+    }))
+  );
+}
+
   };
 
   /* ================= 簡易テスト（開発時のみ） ================= */
