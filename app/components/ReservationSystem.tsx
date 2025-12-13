@@ -1,0 +1,330 @@
+"use client";
+
+import React, { useEffect, useMemo, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Badge } from "@/components/ui/badge";
+
+/**
+ * 長谷川 Times
+ * ・車種ごとにカレンダー／予約一覧が切り替わる
+ * ・ログインはユーザー＋パスワード1枠のみ（ユーザー変更で自動ログアウト）
+ * ・予約重複は「同一車種」内のみ不可
+ * ・現在より過去（日時）は予約不可（UI/ロジック両方で防止）
+ */
+
+type Reservation = {
+  id: string;
+  user: string;
+  car: string;
+  start: Date;
+  end: Date;
+};
+
+const overlaps = (aStart: Date, aEnd: Date, bStart: Date, bEnd: Date) =>
+  aStart < bEnd && aEnd > bStart;
+
+const newId = () => {
+  const c = (globalThis as any)?.crypto;
+  if (c?.randomUUID) return c.randomUUID();
+  return Math.random().toString(36).slice(2);
+};
+
+export default function ReservationSystem() {
+  const STORAGE_KEY = "hasegawa-times-reservations-v1";
+
+  /* ================= ログイン ================= */
+  const [currentUser, setCurrentUser] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const users: Record<string, string> = {
+    山田: "yamada123",
+    長谷川: "hasegawa123",
+    川崎: "kawasaki123",
+  };
+
+  const handleLogin = () => {
+    setIsLoggedIn(false);
+    if (!currentUser || !password) return alert("ユーザーとパスワードを入力してください");
+    if (!(currentUser in users)) return alert("存在しないユーザーです");
+    if (users[currentUser] !== password) return alert("パスワードが違います");
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setCurrentUser("");
+    setPassword("");
+    setShowPassword(false);
+  };
+
+  /* ================= 予約 ================= */
+  const cars = ["BMW 320i ツーリング", "スズキ パレットSW"];
+  const [selectedCar, setSelectedCar] = useState(cars[0]);
+
+  const [dateRange, setDateRange] = useState<any>({});
+  const [borrowTime, setBorrowTime] = useState("10:00");
+  const [returnTime, setReturnTime] = useState("12:00");
+
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+
+  // 起動時に localStorage から予約を復元
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as any[];
+      const restored: Reservation[] = parsed.map((r) => ({
+        ...r,
+        start: new Date(r.start),
+        end: new Date(r.end),
+      }));
+      setReservations(restored);
+    } catch (e) {
+      console.error("failed to load reservations", e);
+    }
+  }, []);
+
+  // 予約が変わるたびに localStorage に保存
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(reservations));
+    } catch (e) {
+      console.error("failed to save reservations", e);
+    }
+  }, [reservations]);
+
+  const filteredReservations = useMemo(
+    () => reservations.filter((r) => r.car === selectedCar),
+    [reservations, selectedCar]
+  );
+
+  const getDayStatus = (date: Date) => {
+    const dayStart = new Date(date);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(date);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    const dayReservations = filteredReservations.filter(
+      (r) => r.start <= dayEnd && r.end >= dayStart
+    );
+
+    if (dayReservations.length === 0) return "free";
+
+    const isFull = dayReservations.some((r) => r.start <= dayStart && r.end >= dayEnd);
+
+    return isFull ? "full" : "partial";
+  };
+
+  const handleReserve = () => {
+    const nowTs = new Date();
+    if (!isLoggedIn || !dateRange?.from || !dateRange?.to) return;
+
+    const start = new Date(dateRange.from);
+    const [bh, bm] = borrowTime.split(":").map(Number);
+    start.setHours(bh, bm, 0, 0);
+
+    const end = new Date(dateRange.to);
+    const [rh, rm] = returnTime.split(":").map(Number);
+    end.setHours(rh, rm, 0, 0);
+
+    if (start < nowTs) return alert("過去の日時は予約できません");
+    if (end <= start) return alert("返却日時は借りる日時より後にしてください");
+
+    if (filteredReservations.some((r) => overlaps(start, end, r.start, r.end))) {
+      return alert("その車種はすでに予約があります");
+    }
+
+    setReservations((prev) => [
+      ...prev,
+      { id: newId(), user: currentUser, car: selectedCar, start, end },
+    ]);
+  };
+
+  /* ================= 簡易テスト（開発時のみ） ================= */
+  if (process.env.NODE_ENV !== "production") {
+    const a0 = new Date("2025-01-01T10:00:00");
+    const a1 = new Date("2025-01-01T11:00:00");
+    const a2 = new Date("2025-01-01T12:00:00");
+    console.assert(overlaps(a0, a2, a1, a2) === true, "overlaps should be true");
+    console.assert(overlaps(a0, a1, a1, a2) === false, "touching edges should be false");
+    console.assert(overlaps(a0, a2, a0, a2) === true, "same interval should overlap");
+    console.assert(
+      overlaps(a0, a1, a2, new Date("2025-01-01T13:00:00")) === false,
+      "separated ranges should be false"
+    );
+    console.assert(
+      overlaps(a1, a2, a0, new Date("2025-01-01T13:00:00")) === true,
+      "containment should be true"
+    );
+    // 追加テスト: 完全一致
+    console.assert(overlaps(a0, a2, a0, a2) === true, "exact match should overlap");
+  }
+
+  /* ================= UI ================= */
+  return (
+    <div className="max-w-6xl mx-auto p-8 grid gap-12 bg-gradient-to-b from-yellow-50 via-white to-yellow-100 min-h-screen">
+      <h1 className="text-4xl font-black italic whitespace-nowrap">長谷川 Times</h1>
+
+      {/* ログイン */}
+      <Card>
+        <CardContent className="p-6 grid gap-4">
+          <div className="grid gap-3">
+            <div className="flex justify-between items-center">
+              <h2 className="font-bold">ログイン</h2>
+              {isLoggedIn ? (
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-yellow-400 text-black">ログイン中：{currentUser}</Badge>
+                  <Button variant="outline" size="sm" onClick={handleLogout}>
+                    ログアウト
+                  </Button>
+                </div>
+              ) : (
+                <Badge variant="secondary">未ログイン</Badge>
+              )}
+            </div>
+
+            <select
+              value={currentUser}
+              onChange={(e) => {
+                setCurrentUser(e.target.value);
+                setIsLoggedIn(false);
+                setPassword("");
+                setShowPassword(false);
+              }}
+            >
+              <option value="">ユーザー選択</option>
+              {Object.keys(users).map((u) => (
+                <option key={u} value={u}>
+                  {u}
+                </option>
+              ))}
+            </select>
+
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="パスワード"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full border-2 border-yellow-400 rounded-xl px-3 py-2 pr-16 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 rounded-md border border-yellow-400 bg-white hover:bg-yellow-100"
+                aria-label={showPassword ? "パスワードを非表示" : "パスワードを表示"}
+              >
+                {showPassword ? "非表示" : "表示"}
+              </button>
+            </div>
+
+            <Button onClick={handleLogin}>ログイン</Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 予約 */}
+      <Card>
+        <CardContent className="p-6 grid gap-4">
+          <h2 className="font-bold">予約</h2>
+
+          <select value={selectedCar} onChange={(e) => setSelectedCar(e.target.value)}>
+            {cars.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+
+          <div className="text-sm">🟡 一部空き　🔴 満杯</div>
+
+          <Calendar
+            mode="range"
+            selected={dateRange}
+            onSelect={(range) => {
+              setDateRange(range ?? {});
+            }}
+            disabled={(date) => {
+              const todayStart = new Date();
+              todayStart.setHours(0, 0, 0, 0);
+              return date < todayStart;
+            }}
+            modifiers={{
+              start: (d) =>
+                !!dateRange?.from && d.toDateString() === dateRange.from.toDateString(),
+              end: (d) => !!dateRange?.to && d.toDateString() === dateRange.to.toDateString(),
+              range: (d) => {
+                if (!dateRange?.from || !dateRange?.to) return false;
+                const ds = new Date(d);
+                ds.setHours(0, 0, 0, 0);
+                const fs = new Date(dateRange.from);
+                fs.setHours(0, 0, 0, 0);
+                const ts = new Date(dateRange.to);
+                ts.setHours(0, 0, 0, 0);
+                return ds > fs && ds < ts;
+              },
+              full: (d) => getDayStatus(d) === "full",
+              partial: (d) => getDayStatus(d) === "partial",
+            }}
+            modifiersClassNames={{
+              start: "bg-blue-600 text-white",
+              end: "bg-green-600 text-white",
+              range: "bg-blue-100",
+              full: "bg-red-400 text-white",
+              partial: "bg-yellow-300",
+            }}
+          />
+
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              type="time"
+              value={borrowTime}
+              onChange={(e) => setBorrowTime(e.target.value)}
+            />
+            <input
+              type="time"
+              value={returnTime}
+              onChange={(e) => setReturnTime(e.target.value)}
+            />
+          </div>
+
+          <Button disabled={!isLoggedIn} onClick={handleReserve}>
+            予約する
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* 予約一覧 */}
+      <Card>
+        <CardContent className="p-6 grid gap-3">
+          <h2 className="font-bold">予約一覧（{selectedCar}）</h2>
+
+          {filteredReservations.length === 0 && <p>予約はありません</p>}
+
+          {filteredReservations.map((r) => (
+            <div key={r.id} className="border p-3 rounded flex justify-between items-center">
+              <div>
+                <p>利用者：{r.user}</p>
+                <p>
+                  {r.start.toLocaleString()} ～ {r.end.toLocaleString()}
+                </p>
+              </div>
+              {isLoggedIn && r.user === currentUser && (
+                <Button
+                  variant="destructive"
+                  onClick={() => setReservations((prev) => prev.filter((x) => x.id !== r.id))}
+                >
+                  キャンセル
+                </Button>
+              )}
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
