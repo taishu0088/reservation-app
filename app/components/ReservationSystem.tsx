@@ -355,7 +355,7 @@ if (data) {
           {filteredReservations.length === 0 && <p>予約はありません</p>}
 
           {filteredReservations.map((r) => (
-            <div key={r.id} className="border p-3 rounded flex justify-between items-center relative z-10">
+            <div key={r.id} className="border p-3 rounded flex justify-between items-center relative z-20 pointer-events-auto">
               <div>
                 <p>利用者：{r.user}</p>
                 <p>
