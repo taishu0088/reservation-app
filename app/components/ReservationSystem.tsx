@@ -366,32 +366,19 @@ if (data) {
 <Button
   variant="destructive"
   onClick={async () => {
-    // ① Supabaseから削除
     await supabase
       .from("reservation")
       .delete()
       .eq("id", r.id);
-      
-    // ② 最新データを取り直す
-    const { data } = await supabase
-      .from("reservation")
-      .select("*");
 
-    if (data) {
-      setReservations(
-        data.map((x) => ({
-          id: x.id,
-          user: x.user,
-          car: x.car,
-          start: new Date(x.start_time),
-          end: new Date(x.end_time),
-        }))
-      );
-    }
+    setReservations((prev) =>
+      prev.filter((x) => x.id !== r.id)
+    );
   }}
 >
   キャンセル
 </Button>
+
 
               )}
             </div>
