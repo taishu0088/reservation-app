@@ -363,7 +363,7 @@ if (data) {
                 </p>
               </div>
               {isLoggedIn && r.user === currentUser && (
-                <Button
+<Button
   variant="destructive"
   onClick={async () => {
     // ① Supabaseから削除
