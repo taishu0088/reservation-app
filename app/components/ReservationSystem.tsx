@@ -355,7 +355,7 @@ if (data) {
           {filteredReservations.length === 0 && <p>予約はありません</p>}
 
           {filteredReservations.map((r) => (
-            <div key={r.id} className="border p-3 rounded flex justify-between items-center">
+            <div key={r.id} className="border p-3 rounded flex justify-between items-center relative z-10">
               <div>
                 <p>利用者：{r.user}</p>
                 <p>
@@ -371,7 +371,7 @@ if (data) {
       .from("reservation")
       .delete()
       .eq("id", r.id);
-
+      
     // ② 最新データを取り直す
     const { data } = await supabase
       .from("reservation")
