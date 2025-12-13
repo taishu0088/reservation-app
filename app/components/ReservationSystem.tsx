@@ -62,7 +62,7 @@ export default function ReservationSystem() {
   };
 
   /* ================= 予約 ================= */
-  const cars = ["BMW 320i ツーリング", "スズキ パレットSW"];
+  const cars = ["BMW 320i ツーリング", "パレットSW"];
   const [selectedCar, setSelectedCar] = useState(cars[0]);
 
   const [dateRange, setDateRange] = useState<any>({});
