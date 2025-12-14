@@ -403,62 +403,84 @@ if (data) {
         </CardContent>
       </Card>
 
-    {/* 予約一覧 */}
+   {/* 予約一覧 */}
 <Card>
   <CardContent className="p-6 grid gap-3">
     <h2 className="font-bold">予約一覧（{selectedCar}）</h2>
 
-   {sortedReservations.length === 0 && <p>予約はありません</p>}
+    {sortedReservations.length === 0 && <p>予約はありません</p>}
 
-{sortedReservations.map((r) => {
-  const isBefore = now < r.start;
-  const isActive = now >= r.start && now <= r.end;
-  const isFinished = now > r.end;
+    {sortedReservations.map((r) => {
+      const isBefore = now < r.start;
+      const isActive = now >= r.start && now <= r.end;
+      const isFinished = now > r.end;
 
-  return (
-    <div
-      key={r.id}
-      className={`border p-3 rounded flex justify-between items-center transition-colors
-        ${isActive && !isFinished ? "bg-green-200 border-green-400" : ""}
-        ${isFinished ? "bg-gray-200 text-gray-500" : ""}
-      `}
-    >
-      <div>
-        <p>利用者：{r.user}</p>
-        <p>
-          {r.start.toLocaleString()} ～ {r.end.toLocaleString()}
-        </p>
+      return (
+        <div
+          key={r.id}
+          className={`border p-3 rounded flex justify-between items-center transition-colors
+            ${isActive ? "bg-green-200 border-green-400" : ""}
+            ${isFinished ? "bg-gray-200 text-gray-500" : ""}
+          `}
+        >
+          <div>
+            <p>利用者：{r.user}</p>
+            <p>
+              {r.start.toLocaleString()} ～ {r.end.toLocaleString()}
+            </p>
 
-        {isActive && !isFinished && (
-          <p className="text-sm font-bold text-green-700">▶ 利用中</p>
-        )}
+            {isActive && (
+              <p className="text-sm font-bold text-green-700">▶ 利用中</p>
+            )}
 
-        {isFinished && (
-          <p className="text-sm">✓ 利用終了</p>
-        )}
-      </div>
+            {isFinished && (
+              <p className="text-sm">✓ 利用終了</p>
+            )}
+          </div>
 
-      {/* 利用前：キャンセル */}
-      {isLoggedIn && r.user === currentUser && isBefore && (
-        <Button variant="destructive">
-          キャンセル
-        </Button>
-      )}
+          {/* 利用前：キャンセル */}
+          {isLoggedIn && r.user === currentUser && isBefore && (
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                await supabase.from("reservation").delete().eq("id", r.id);
+                setReservations((prev) =>
+                  prev.filter((x) => x.id !== r.id)
+                );
+              }}
+            >
+              キャンセル
+            </Button>
+          )}
 
-      {/* 利用中：返却 */}
-      {isLoggedIn && r.user === currentUser && isActive && !isFinished && (
-        <Button variant="outline">
-          返却
-        </Button>
-      )}
-    </div>
-  );
-})}
+          {/* 利用中：返却 */}
+          {isLoggedIn && r.user === currentUser && isActive && (
+            <Button
+              variant="outline"
+              onClick={async () => {
+                const nowIso = new Date().toISOString();
 
-   
+                await supabase
+                  .from("reservation")
+                  .update({ end_time: nowIso })
+                  .eq("id", r.id);
 
+                setReservations((prev) =>
+                  prev.map((x) =>
+                    x.id === r.id ? { ...x, end: new Date(nowIso) } : x
+                  )
+                );
+              }}
+            >
+              返却
+            </Button>
+          )}
+        </div>
+      );
+    })}
   </CardContent>
 </Card>
+
 
     </div>
   );
