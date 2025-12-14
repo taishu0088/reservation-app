@@ -390,22 +390,25 @@ if (data) {
 
     {visibleReservations.length === 0 && <p>予約はありません</p>}
 
- {visibleReservations
+ {filteredReservations
   .filter((r) => {
-    // 終了から1時間後までは表示
-    const hideAt = new Date(r.end);
-    hideAt.setHours(hideAt.getHours() + 1);
-    return now <= hideAt;
+    // 終了日の 23:59:59 を作る
+    const endOfDay = new Date(r.end);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // 終了日を過ぎたら非表示
+    return now <= endOfDay;
   })
   .map((r) => {
-    const isActive = now >= r.start && now <= r.end;
+    const isBefore = now < r.start;
+    const isActive = now >= r.start;
     const isFinished = now > r.end;
 
     return (
       <div
         key={r.id}
         className={`border p-3 rounded flex justify-between items-center transition-colors
-          ${isActive ? "bg-green-200 border-green-400" : ""}
+          ${isActive && !isFinished ? "bg-green-200 border-green-400" : ""}
           ${isFinished ? "bg-gray-200 text-gray-500" : ""}
         `}
       >
@@ -415,7 +418,7 @@ if (data) {
             {r.start.toLocaleString()} ～ {r.end.toLocaleString()}
           </p>
 
-          {isActive && (
+          {isActive && !isFinished && (
             <p className="text-sm font-bold text-green-700">
               ▶ 利用中
             </p>
@@ -428,8 +431,8 @@ if (data) {
           )}
         </div>
 
-        {/* 利用中はキャンセル不可 */}
-        {isLoggedIn && r.user === currentUser && !isActive && (
+        {/* 利用前：キャンセル */}
+        {isLoggedIn && r.user === currentUser && isBefore && (
           <Button
             variant="destructive"
             onClick={async () => {
@@ -446,9 +449,43 @@ if (data) {
             キャンセル
           </Button>
         )}
+
+        {/* 利用中：返却（時間を今に更新） */}
+        {isLoggedIn && r.user === currentUser && isActive && !isFinished && (
+          <Button
+            className="bg-blue-500 hover:bg-blue-600 text-white"
+            onClick={async () => {
+              const nowIso = new Date().toISOString();
+
+              await supabase
+                .from("reservation")
+                .update({ end_time: nowIso })
+                .eq("id", r.id);
+
+              const { data } = await supabase
+                .from("reservation")
+                .select("*");
+
+              if (data) {
+                setReservations(
+                  data.map((x) => ({
+                    id: x.id,
+                    user: x.user,
+                    car: x.car,
+                    start: new Date(x.start_time),
+                    end: new Date(x.end_time),
+                  }))
+                );
+              }
+            }}
+          >
+            返却
+          </Button>
+        )}
       </div>
     );
   })}
+
 
 
   </CardContent>
