@@ -65,7 +65,7 @@ export default function ReservationSystem() {
   const users: Record<string, string> = {
     山田: "keita225",
     長谷川: "h0817",
-    川崎: "touya03",
+    川崎: "toya03",
   };
 
   const handleLogin = () => {
@@ -84,7 +84,7 @@ export default function ReservationSystem() {
   };
 
   /* ================= 予約 ================= */
-  const cars = ["BMW 320i ツーリング", "パレットSW"];
+  const cars = ["BMW 320i ツーリング", "スズキ パレットSW"];
   const [selectedCar, setSelectedCar] = useState(cars[0]);
 
   const [dateRange, setDateRange] = useState<any>({});
