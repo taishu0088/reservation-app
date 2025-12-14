@@ -64,9 +64,9 @@ export default function ReservationSystem() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const users: Record<string, string> = {
-    けいた: "keita225",
-    たいしゅう: "h0817",
-    とうや: "toya03",
+    山田: "keita225",
+    長谷川: "h0817",
+    川崎: "toya03",
   };
 
   const handleLogin = () => {
