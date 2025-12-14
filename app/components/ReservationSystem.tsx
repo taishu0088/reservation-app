@@ -157,25 +157,28 @@ useEffect(() => {
     }
   }, [reservations]);
 
-  const filteredReservations = useMemo(
-    () => reservations.filter((r) => r.car === selectedCar),
-    [reservations, selectedCar]
-  );
-  const visibleReservations = filteredReservations.filter(
-  (r) => now < r.end
+ const filteredReservations = useMemo(
+  () => reservations.filter((r) => r.car === selectedCar),
+  [reservations, selectedCar]
 );
-const sortedReservations = [...filteredReservations]
-  .filter((r) => {
-    const endOfDay = new Date(r.end);
-    endOfDay.setHours(23, 59, 59, 999);
-    return now <= endOfDay;
-  })
-  .sort((a, b) => {
-    if (sortMode === "start") {
-      return a.start.getTime() - b.start.getTime();
-    }
-    return a.createdAt.getTime() - b.createdAt.getTime();
-  });
+
+const sortedReservations = useMemo(() => {
+  return [...filteredReservations]
+    // 当日中は表示、日を跨いだら消す
+    .filter((r) => {
+      const endOfDay = new Date(r.end);
+      endOfDay.setHours(23, 59, 59, 999);
+      return now <= endOfDay;
+    })
+    // 並び順切り替え
+    .sort((a, b) => {
+      if (sortMode === "start") {
+        return a.start.getTime() - b.start.getTime();
+      }
+      return a.createdAt.getTime() - b.createdAt.getTime();
+    });
+}, [filteredReservations, now, sortMode]);
+
 
 
   const getDayStatus = (date: Date) => {
@@ -405,106 +408,54 @@ if (data) {
   <CardContent className="p-6 grid gap-3">
     <h2 className="font-bold">予約一覧（{selectedCar}）</h2>
 
-    {visibleReservations.length === 0 && <p>予約はありません</p>}
+   {sortedReservations.length === 0 && <p>予約はありません</p>}
 
- {filteredReservations
-  .filter((r) => {
-    // 終了日の 23:59:59 を作る
-    const endOfDay = new Date(r.end);
-    endOfDay.setHours(23, 59, 59, 999);
+{sortedReservations.map((r) => {
+  const isBefore = now < r.start;
+  const isActive = now >= r.start && now <= r.end;
+  const isFinished = now > r.end;
 
-    // 終了日を過ぎたら非表示
-    return now <= endOfDay;
-  })
-  .map((r) => {
-    const isBefore = now < r.start;
-    const isActive = now >= r.start;
-    const isFinished = now > r.end;
+  return (
+    <div
+      key={r.id}
+      className={`border p-3 rounded flex justify-between items-center transition-colors
+        ${isActive && !isFinished ? "bg-green-200 border-green-400" : ""}
+        ${isFinished ? "bg-gray-200 text-gray-500" : ""}
+      `}
+    >
+      <div>
+        <p>利用者：{r.user}</p>
+        <p>
+          {r.start.toLocaleString()} ～ {r.end.toLocaleString()}
+        </p>
 
-    return (
-      <div
-        key={r.id}
-        className={`border p-3 rounded flex justify-between items-center transition-colors
-          ${isActive && !isFinished ? "bg-green-200 border-green-400" : ""}
-          ${isFinished ? "bg-gray-200 text-gray-500" : ""}
-        `}
-      >
-        <div>
-          <p>利用者：{r.user}</p>
-          <p>
-            {r.start.toLocaleString()} ～ {r.end.toLocaleString()}
-          </p>
-
-          {isActive && !isFinished && (
-            <p className="text-sm font-bold text-green-700">
-              ▶ 利用中
-            </p>
-          )}
-
-          {isFinished && (
-            <p className="text-sm">
-              ✔ 利用終了
-            </p>
-          )}
-        </div>
-
-        {/* 利用前：キャンセル */}
-        {isLoggedIn && r.user === currentUser && isBefore && (
-          <Button
-            variant="destructive"
-            onClick={async () => {
-              await supabase
-                .from("reservation")
-                .delete()
-                .eq("id", r.id);
-
-              setReservations((prev) =>
-                prev.filter((x) => x.id !== r.id)
-              );
-            }}
-          >
-            キャンセル
-          </Button>
+        {isActive && !isFinished && (
+          <p className="text-sm font-bold text-green-700">▶ 利用中</p>
         )}
 
-        {/* 利用中：返却（時間を今に更新） */}
-        {isLoggedIn && r.user === currentUser && isActive && !isFinished && (
-          <Button
-            className="bg-blue-500 hover:bg-blue-600 text-white"
-            onClick={async () => {
-              const nowIso = new Date().toISOString();
-
-              await supabase
-                .from("reservation")
-                .update({ end_time: nowIso })
-                .eq("id", r.id);
-
-              const { data } = await supabase
-                .from("reservation")
-                .select("*");
-
-              if (data) {
-                setReservations(
-                  data.map((x) => ({
-                    id: x.id,
-                    user: x.user,
-                    car: x.car,
-                    start: new Date(x.start_time),
-                    end: new Date(x.end_time),
-                    createdAt: new Date(r.created_at),
-                  }))
-                );
-              }
-            }}
-          >
-            返却
-          </Button>
+        {isFinished && (
+          <p className="text-sm">✓ 利用終了</p>
         )}
       </div>
-    );
-  })}
 
+      {/* 利用前：キャンセル */}
+      {isLoggedIn && r.user === currentUser && isBefore && (
+        <Button variant="destructive">
+          キャンセル
+        </Button>
+      )}
 
+      {/* 利用中：返却 */}
+      {isLoggedIn && r.user === currentUser && isActive && !isFinished && (
+        <Button variant="outline">
+          返却
+        </Button>
+      )}
+    </div>
+  );
+})}
+
+   
 
   </CardContent>
 </Card>
