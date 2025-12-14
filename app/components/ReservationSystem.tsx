@@ -24,6 +24,28 @@ type Reservation = {
 
 const overlaps = (aStart: Date, aEnd: Date, bStart: Date, bEnd: Date) =>
   aStart < bEnd && aEnd > bStart;
+type ReservationStatus = "upcoming" | "active" | "finished" | "expired";
+
+const getReservationStatus = (r: Reservation, now: Date): ReservationStatus => {
+  const endPlus2h = new Date(r.end);
+  endPlus2h.setHours(endPlus2h.getHours() + 2);
+
+  if (now < r.start) return "upcoming";        // 予約前
+  if (now >= r.start && now <= r.end) return "active"; // 利用中
+  if (now > r.end && now <= endPlus2h) return "finished"; // 終了直後
+  return "expired"; // 終了から2時間以上
+};
+
+const getBgClass = (status: ReservationStatus) => {
+  switch (status) {
+    case "active":
+      return "bg-blue-100 border-blue-400";
+    case "finished":
+      return "bg-gray-200 text-gray-500";
+    default:
+      return "bg-white";
+  }
+};
 
 const newId = () => {
   const c = (globalThis as any)?.crypto;
@@ -368,43 +390,64 @@ if (data) {
 
     {visibleReservations.length === 0 && <p>予約はありません</p>}
 
-    {visibleReservations.map((r) => {
-      const isActive = now >= r.start && now <= r.end;
+  {visibleReservations
+  .filter((r) => {
+    const endPlus2h = new Date(r.end);
+    endPlus2h.setHours(endPlus2h.getHours() + 2);
+    return now <= endPlus2h; // 終了2時間後までは表示
+  })
+  .map((r) => {
+    const isActive = now >= r.start && now <= r.end;
+    const isFinished = now > r.end;
 
-      return (
-        <div
-          key={r.id}
-          className={`border p-3 rounded flex justify-between items-center ${
-            isActive ? "bg-yellow-100" : ""
-          }`}
-        >
-          <div>
-            <p>利用者：{r.user}</p>
-            <p>
-              {r.start.toLocaleString()} ～ {r.end.toLocaleString()}
+    return (
+      <div
+        key={r.id}
+        className={`border p-3 rounded flex justify-between items-center
+          ${isActive ? "bg-blue-100 border-blue-400" : ""}
+          ${isFinished ? "bg-gray-200 text-gray-500" : ""}
+        `}
+      >
+        <div>
+          <p>利用者：{r.user}</p>
+          <p>
+            {r.start.toLocaleString()} ～ {r.end.toLocaleString()}
+          </p>
+
+          {isActive && (
+            <p className="text-sm font-bold text-blue-600">
+              ▶ 利用中
             </p>
-          </div>
+          )}
 
-          {isLoggedIn && r.user === currentUser &&  (
-            <Button
-              variant="destructive"
-              onClick={async () => {
-                await supabase
-                  .from("reservation")
-                  .delete()
-                  .eq("id", r.id);
-
-                setReservations((prev) =>
-                  prev.filter((x) => x.id !== r.id)
-                );
-              }}
-            >
-              キャンセル
-            </Button>
+          {isFinished && (
+            <p className="text-sm">
+              ✔ 利用終了（まもなく非表示）
+            </p>
           )}
         </div>
-      );
-    })}
+
+        {isLoggedIn && r.user === currentUser && !isActive && (
+          <Button
+            variant="destructive"
+            onClick={async () => {
+              await supabase
+                .from("reservation")
+                .delete()
+                .eq("id", r.id);
+
+              setReservations((prev) =>
+                prev.filter((x) => x.id !== r.id)
+              );
+            }}
+          >
+            キャンセル
+          </Button>
+        )}
+      </div>
+    );
+  })}
+
   </CardContent>
 </Card>
 
