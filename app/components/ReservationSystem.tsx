@@ -20,6 +20,7 @@ type Reservation = {
   car: string;
   start: Date;
   end: Date;
+  createdAt: Date;
 };
 
 const overlaps = (aStart: Date, aEnd: Date, bStart: Date, bEnd: Date) =>
@@ -92,6 +93,8 @@ export default function ReservationSystem() {
   const [returnTime, setReturnTime] = useState("12:00");
 
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  type SortMode = "start" | "created";
+  const [sortMode, setSortMode] = useState<SortMode>("start");
   const [now, setNow] = useState(new Date());
 
 useEffect(() => {
@@ -120,6 +123,7 @@ useEffect(() => {
         car: r.car,
         start: new Date(r.start_time),
         end: new Date(r.end_time),
+        createdAt: new Date(r.created_at),
       }))
     );
   };
@@ -160,6 +164,18 @@ useEffect(() => {
   const visibleReservations = filteredReservations.filter(
   (r) => now < r.end
 );
+const sortedReservations = [...filteredReservations]
+  .filter((r) => {
+    const endOfDay = new Date(r.end);
+    endOfDay.setHours(23, 59, 59, 999);
+    return now <= endOfDay;
+  })
+  .sort((a, b) => {
+    if (sortMode === "start") {
+      return a.start.getTime() - b.start.getTime();
+    }
+    return a.createdAt.getTime() - b.createdAt.getTime();
+  });
 
 
   const getDayStatus = (date: Date) => {
@@ -223,6 +239,7 @@ if (data) {
       car: r.car,
       start: new Date(r.start_time),
       end: new Date(r.end_time),
+      createdAt: new Date(r.created_at),
     }))
   );
 }
@@ -474,6 +491,7 @@ if (data) {
                     car: x.car,
                     start: new Date(x.start_time),
                     end: new Date(x.end_time),
+                    createdAt: new Date(r.created_at),
                   }))
                 );
               }
