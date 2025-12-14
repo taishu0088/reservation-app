@@ -390,11 +390,12 @@ if (data) {
 
     {visibleReservations.length === 0 && <p>予約はありません</p>}
 
-  {visibleReservations
+ {visibleReservations
   .filter((r) => {
-    const endPlus2h = new Date(r.end);
-    endPlus2h.setHours(endPlus2h.getHours() + 2);
-    return now <= endPlus2h; // 終了2時間後までは表示
+    // 終了から1時間後までは表示
+    const hideAt = new Date(r.end);
+    hideAt.setHours(hideAt.getHours() + 1);
+    return now <= hideAt;
   })
   .map((r) => {
     const isActive = now >= r.start && now <= r.end;
@@ -403,8 +404,8 @@ if (data) {
     return (
       <div
         key={r.id}
-        className={`border p-3 rounded flex justify-between items-center
-          ${isActive ? "bg-blue-100 border-blue-400" : ""}
+        className={`border p-3 rounded flex justify-between items-center transition-colors
+          ${isActive ? "bg-green-200 border-green-400" : ""}
           ${isFinished ? "bg-gray-200 text-gray-500" : ""}
         `}
       >
@@ -415,18 +416,19 @@ if (data) {
           </p>
 
           {isActive && (
-            <p className="text-sm font-bold text-blue-600">
+            <p className="text-sm font-bold text-green-700">
               ▶ 利用中
             </p>
           )}
 
           {isFinished && (
             <p className="text-sm">
-              ✔ 利用終了（まもなく非表示）
+              ✔ 利用終了
             </p>
           )}
         </div>
 
+        {/* 利用中はキャンセル不可 */}
         {isLoggedIn && r.user === currentUser && !isActive && (
           <Button
             variant="destructive"
@@ -447,6 +449,7 @@ if (data) {
       </div>
     );
   })}
+
 
   </CardContent>
 </Card>
