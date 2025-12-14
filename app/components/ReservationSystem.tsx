@@ -385,7 +385,7 @@ if (data) {
             </p>
           </div>
 
-          {isLoggedIn && r.user === currentUser && isActive && (
+          {isLoggedIn && r.user === currentUser &&  (
             <Button
               variant="destructive"
               onClick={async () => {
