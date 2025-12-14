@@ -70,6 +70,16 @@ export default function ReservationSystem() {
   const [returnTime, setReturnTime] = useState("12:00");
 
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [now, setNow] = useState(new Date());
+
+useEffect(() => {
+  const timer = setInterval(() => {
+    setNow(new Date());
+  }, 60 * 1000);
+
+  return () => clearInterval(timer);
+}, []);
+
   useEffect(() => {
   const fetchReservations = async () => {
     const { data, error } = await supabase
@@ -125,6 +135,10 @@ export default function ReservationSystem() {
     () => reservations.filter((r) => r.car === selectedCar),
     [reservations, selectedCar]
   );
+  const visibleReservations = filteredReservations.filter(
+  (r) => now < r.end
+);
+
 
   const getDayStatus = (date: Date) => {
     const dayStart = new Date(date);
@@ -347,44 +361,53 @@ if (data) {
         </CardContent>
       </Card>
 
-      {/* 予約一覧 */}
-      <Card>
-        <CardContent className="p-6 grid gap-3">
-          <h2 className="font-bold">予約一覧（{selectedCar}）</h2>
+    {/* 予約一覧 */}
+<Card>
+  <CardContent className="p-6 grid gap-3">
+    <h2 className="font-bold">予約一覧（{selectedCar}）</h2>
 
-          {filteredReservations.length === 0 && <p>予約はありません</p>}
+    {visibleReservations.length === 0 && <p>予約はありません</p>}
 
-          {filteredReservations.map((r) => (
-            <div key={r.id} className="border p-3 rounded flex justify-between items-center relative z-20 pointer-events-auto">
-              <div>
-                <p>利用者：{r.user}</p>
-                <p>
-                  {r.start.toLocaleString()} ～ {r.end.toLocaleString()}
-                </p>
-              </div>
-              {isLoggedIn && r.user === currentUser && (
-<Button
-  variant="destructive"
-  onClick={async () => {
-    await supabase
-      .from("reservation")
-      .delete()
-      .eq("id", r.id);
+    {visibleReservations.map((r) => {
+      const isActive = now >= r.start && now <= r.end;
 
-    setReservations((prev) =>
-      prev.filter((x) => x.id !== r.id)
-    );
-  }}
->
-  キャンセル
-</Button>
+      return (
+        <div
+          key={r.id}
+          className={`border p-3 rounded flex justify-between items-center ${
+            isActive ? "bg-yellow-100" : ""
+          }`}
+        >
+          <div>
+            <p>利用者：{r.user}</p>
+            <p>
+              {r.start.toLocaleString()} ～ {r.end.toLocaleString()}
+            </p>
+          </div>
 
+          {isLoggedIn && r.user === currentUser && isActive && (
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                await supabase
+                  .from("reservation")
+                  .delete()
+                  .eq("id", r.id);
 
-              )}
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+                setReservations((prev) =>
+                  prev.filter((x) => x.id !== r.id)
+                );
+              }}
+            >
+              キャンセル
+            </Button>
+          )}
+        </div>
+      );
+    })}
+  </CardContent>
+</Card>
+
     </div>
   );
 }
