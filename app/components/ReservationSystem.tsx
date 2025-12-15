@@ -347,7 +347,7 @@ if (data) {
 
           <div className="flex justify-center">🟡 一部空き　🔴 満杯</div>
 
-       <div className="flex justify-center"></div>
+       <div className="flex justify-center">
           <Calendar
             mode="range"
             selected={dateRange}
@@ -384,6 +384,7 @@ if (data) {
               partial: "bg-yellow-300",
             }}
           />
+        </div>
 
           <div className="grid grid-cols-2 gap-2">
             <input
