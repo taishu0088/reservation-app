@@ -345,7 +345,7 @@ if (data) {
             ))}
           </select>
 
-          <div className="text-sm">🟡 一部空き　🔴 満杯</div>
+          <div className="flex justify-center">🟡 一部空き　🔴 満杯</div>
 
           <Calendar
             mode="range"
