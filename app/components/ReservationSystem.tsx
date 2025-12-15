@@ -85,7 +85,7 @@ export default function ReservationSystem() {
   };
 
   /* ================= 予約 ================= */
-  const cars = ["BMW 320i ツーリング", "スズキ パレットSW"];
+  const cars = ["BMW 320i ツーリング", "トヨタ ランクル300"];
   const [selectedCar, setSelectedCar] = useState(cars[0]);
 
   const [dateRange, setDateRange] = useState<any>({});
@@ -181,22 +181,34 @@ const sortedReservations = useMemo(() => {
 
 
 
-  const getDayStatus = (date: Date) => {
-    const dayStart = new Date(date);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(date);
-    dayEnd.setHours(23, 59, 59, 999);
+const getDayStatus = (date: Date) => {
+  // 「今日の0:00」
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
 
-    const dayReservations = filteredReservations.filter(
-      (r) => r.start <= dayEnd && r.end >= dayStart
-    );
+  // 過去日は色を出さない（= free 扱い）
+  const target = new Date(date);
+  target.setHours(0, 0, 0, 0);
+  if (target < todayStart) return "free";
 
-    if (dayReservations.length === 0) return "free";
+  // 対象日の 0:00〜23:59:59.999
+  const dayStart = new Date(target);
+  const dayEnd = new Date(target);
+  dayEnd.setHours(23, 59, 59, 999);
 
-    const isFull = dayReservations.some((r) => r.start <= dayStart && r.end >= dayEnd);
+  const dayReservations = filteredReservations.filter(
+    (r) => r.start <= dayEnd && r.end >= dayStart
+  );
 
-    return isFull ? "full" : "partial";
-  };
+  if (dayReservations.length === 0) return "free";
+
+  const isFull = dayReservations.some(
+    (r) => r.start <= dayStart && r.end >= dayEnd
+  );
+
+  return isFull ? "full" : "partial";
+};
+
 
   const handleReserve = async () => {
     const nowTs = new Date();
@@ -345,7 +357,7 @@ if (data) {
             ))}
           </select>
 
-          <div className="flex justify-center">🟡 一部空き　🔴 満杯</div>
+          <div className="flex justify-center">🟡 一部空き　🔴 満車</div>
 
        <div className="flex justify-center">
           <Calendar
