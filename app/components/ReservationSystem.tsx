@@ -347,6 +347,7 @@ if (data) {
 
           <div className="flex justify-center">🟡 一部空き　🔴 満杯</div>
 
+       <div className="flex justify-center"></div>
           <Calendar
             mode="range"
             selected={dateRange}
