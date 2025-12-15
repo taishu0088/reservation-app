@@ -387,6 +387,7 @@ if (data) {
               range: "bg-blue-100",
               full: "bg-red-400 text-white",
               partial: "bg-yellow-300",
+              past: "bg-transparent text-gray-400 pointer-events-none",
             }}
           />
         </div>
