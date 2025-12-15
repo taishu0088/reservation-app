@@ -445,9 +445,12 @@ if (data) {
         >
           <div>
             <p>利用者：{r.user}</p>
-            <p>
-              {r.start.toLocaleString()} ～ {r.end.toLocaleString()}
-            </p>
+           <p>
+  {r.start.toLocaleDateString()} {r.start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+  {" ～ "}
+  {r.end.toLocaleDateString()} {r.end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+</p>
+
 
             {isActive && (
               <p className="text-sm font-bold text-green-700">▶ 利用中</p>
