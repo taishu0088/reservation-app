@@ -360,6 +360,11 @@ if (data) {
               return date < todayStart;
             }}
             modifiers={{
+              past: (date) => {
+                const todayStart = new Date();
+                todayStart.setHours(0, 0, 0, 0);
+                return date < todayStart; // ← 今日より前
+              },
               start: (d) =>
                 !!dateRange?.from && d.toDateString() === dateRange.from.toDateString(),
               end: (d) => !!dateRange?.to && d.toDateString() === dateRange.to.toDateString(),
