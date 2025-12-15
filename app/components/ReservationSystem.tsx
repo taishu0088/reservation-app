@@ -172,11 +172,17 @@ const sortedReservations = useMemo(() => {
     })
     // 並び順切り替え
     .sort((a, b) => {
-      if (sortMode === "start") {
-        return a.start.getTime() - b.start.getTime();
-      }
-      return a.createdAt.getTime() - b.createdAt.getTime();
-    });
+  const aActive = now >= a.start && now <= a.end;
+  const bActive = now >= b.start && now <= b.end;
+
+  // ① 利用中を最優先
+  if (aActive && !bActive) return -1;
+  if (!aActive && bActive) return 1;
+
+  // ② 両方とも利用中 or 両方とも未使用 → 開始時間順
+  return a.start.getTime() - b.start.getTime();
+});
+
 }, [filteredReservations, now, sortMode]);
 
 
