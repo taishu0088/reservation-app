@@ -523,10 +523,6 @@ if (data) {
       .from("reservation")
       .update({ end_time: nowIso })
       .eq("id", r.id);
-      // ④ 1秒後に「返却中…」解除
-   setTimeout(() => {
-      setReturningId(null);
-    }, 1000);
    }}
 >
   {returningId === r.id ? "返却中..." : "返却"}
