@@ -484,31 +484,39 @@ if (data) {
 
           {/* 利用中：返却 */}
           {isLoggedIn && r.user === currentUser && isActive && !isFinished && (
-  <Button
-    variant="outline"
-    className="transition active:scale-95"
-    onClick={async () => {
-      const nowDate = new Date();
-      const nowIso = nowDate.toISOString();
+<Button
+  className="
+    bg-green-600
+    text-white
+    hover:bg-green-700
+    active:bg-green-800
+    transition
+    active:scale-95
+  "
+  onClick={async () => {
+    const nowDate = new Date();
+    const nowIso = nowDate.toISOString();
 
-      // ① 先に画面を即更新（← これが超重要）
-      setReservations((prev) =>
-        prev.map((x) =>
-          x.id === r.id
-            ? { ...x, end: nowDate }
-            : x
-        )
-      );
+    // ① 先に画面を即更新（超重要）
+    setReservations((prev) =>
+      prev.map((x) =>
+        x.id === r.id
+          ? { ...x, end: nowDate }
+          : x
+      )
+    );
 
-      // ② Supabase を更新
-      await supabase
-        .from("reservation")
-        .update({ end_time: nowIso })
-        .eq("id", r.id);
-    }}
-  >
-    返却
-  </Button>
+    // ② Supabase 更新
+    await supabase
+      .from("reservation")
+      .update({ end_time: nowIso })
+      .eq("id", r.id);
+  }}
+>
+  返却
+</Button>
+
+
 )}
 
         </div>
