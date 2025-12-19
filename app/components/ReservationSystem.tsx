@@ -486,13 +486,7 @@ if (data) {
           {isLoggedIn && r.user === currentUser && isActive && !isFinished && (
   <Button
     variant="outline"
-     className="
-      bg-green-600
-      text-white
-      hover:bg-green-700
-      active:bg-green-800
-      transition-colors
-    "
+    className="transition active:scale-95"
     onClick={async () => {
       const nowDate = new Date();
       const nowIso = nowDate.toISOString();
