@@ -497,7 +497,7 @@ if (data) {
              <>
     {/* ←★ここに表示される */}
     <p className="text-xs text-yellow-700 mb-1">
-      ⛽ ガソリンは満タンで返却してください
+      ⛽ ガソリンは満タンで返却してください ⛽
     </p>
             
 <Button
