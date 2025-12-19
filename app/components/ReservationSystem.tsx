@@ -471,7 +471,7 @@ if (data) {
             {isReturning && (
               <p className="text-sm text-gray-600">返却中…</p>
             )}
-            
+
             {isActive && (
               <p className="text-sm font-bold text-green-700">▶ 利用中</p>
             )}
@@ -514,7 +514,7 @@ if (data) {
     // ① 押した瞬間に「返却中」にする
     setReturningId(r.id);
 
-    const nowDate = new Date();
+    const nowDate = new Date(Date.now() - 1000);
     const nowIso = nowDate.toISOString();
 
     // ② 画面を即更新（← 超重要）
