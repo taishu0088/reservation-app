@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 
+
 /**
  * 長谷川 Times
  * ・車種ごとにカレンダー／予約一覧が切り替わる
@@ -62,7 +63,7 @@ export default function ReservationSystem() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-
+  const [returningId, setReturningId] = useState<string | null>(null);
   const users: Record<string, string> = {
     けいた: "keita225",
     たいしゅう: "h0817",
@@ -484,37 +485,45 @@ if (data) {
 
           {/* 利用中：返却 */}
           {isLoggedIn && r.user === currentUser && isActive && !isFinished && (
+            
 <Button
   className="
-    bg-green-600
-    text-white
+    bg-green-600 text-white
     hover:bg-green-700
     active:bg-green-800
     transition
     active:scale-95
+    disabled:opacity-60
+    disabled:cursor-not-allowed
   "
+  disabled={returningId === r.id}
   onClick={async () => {
+    // ① 押した瞬間に「返却中」にする
+    setReturningId(r.id);
+
     const nowDate = new Date();
     const nowIso = nowDate.toISOString();
 
-    // ① 先に画面を即更新（超重要）
+    // ② 画面を即更新（← 超重要）
     setReservations((prev) =>
       prev.map((x) =>
-        x.id === r.id
-          ? { ...x, end: nowDate }
-          : x
+        x.id === r.id ? { ...x, end: nowDate } : x
       )
     );
 
-    // ② Supabase 更新
+    // ③ DB 更新
     await supabase
       .from("reservation")
       .update({ end_time: nowIso })
       .eq("id", r.id);
+
+    // ④ 完了したら returningId を解除
+    setReturningId(null);
   }}
 >
-  返却
+  {returningId === r.id ? "返却中..." : "返却"}
 </Button>
+
 
 
 )}
