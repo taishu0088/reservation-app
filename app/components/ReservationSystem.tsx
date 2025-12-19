@@ -63,7 +63,6 @@ export default function ReservationSystem() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [returningId, setReturningId] = useState<string | null>(null);
   const users: Record<string, string> = {
     けいた: "keita225",
     たいしゅう: "h0817",
@@ -97,6 +96,8 @@ export default function ReservationSystem() {
   type SortMode = "start" | "created";
   const [sortMode, setSortMode] = useState<SortMode>("start");
   const [now, setNow] = useState(new Date());
+  const [returningId, setReturningId] = useState<string | null>(null);
+
 
 useEffect(() => {
   const timer = setInterval(() => {
@@ -445,20 +446,17 @@ if (data) {
 
 
       return (
-       <div
+       
+
+<div
   key={r.id}
   className={`border p-3 rounded flex justify-between items-center transition-colors
-    ${
-      isReturning
-        ? "bg-gray-200 text-gray-500"
-        : isFinished
-        ? "bg-gray-200 text-gray-500"
-        : isActive
-        ? "bg-green-200 border-green-400"
-        : ""
-    }
+    ${isReturning ? "bg-gray-200 text-gray-500" : ""}
+    ${!isReturning && isActive ? "bg-green-200 border-green-400" : ""}
+    ${!isReturning && isFinished ? "bg-gray-200 text-gray-500" : ""}
   `}
 >
+
 
           <div>
             <p>利用者：{r.user}</p>
@@ -500,26 +498,22 @@ if (data) {
           {isLoggedIn && r.user === currentUser && isActive && !isFinished && (
             
 <Button
-  className="
-    bg-green-600 text-white
-    hover:bg-green-700
-    active:bg-green-800
-    transition
-    active:scale-95
-    disabled:opacity-60
-    disabled:cursor-not-allowed
-  "
   disabled={returningId === r.id}
+  className={`text-white transition active:scale-95
+    ${returningId === r.id
+      ? "bg-gray-400 cursor-not-allowed"
+      : "bg-green-600 hover:bg-green-700 active:bg-green-800"}
+  `}
   onClick={async () => {
-    // ① 押した瞬間に「返却中」にする
+    // ① 押した瞬間にグレー固定
     setReturningId(r.id);
 
-    const nowDate = new Date(Date.now() - 1000);
+    const nowDate = new Date();
     const nowIso = nowDate.toISOString();
 
-    // ② 画面を即更新（← 超重要）
-    setReservations((prev) =>
-      prev.map((x) =>
+    // ② 画面を即更新
+    setReservations(prev =>
+      prev.map(x =>
         x.id === r.id ? { ...x, end: nowDate } : x
       )
     );
@@ -529,13 +523,11 @@ if (data) {
       .from("reservation")
       .update({ end_time: nowIso })
       .eq("id", r.id);
-
-    // ④ 完了したら returningId を解除
-    setReturningId(null);
   }}
 >
   {returningId === r.id ? "返却中..." : "返却"}
 </Button>
+
 
 
 
@@ -551,3 +543,4 @@ if (data) {
     </div>
   );
 }
+
