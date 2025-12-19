@@ -85,7 +85,7 @@ export default function ReservationSystem() {
   };
 
   /* ================= 予約 ================= */
-  const cars = ["BMW 320i ツーリング", "トヨタ ランクル300"];
+  const cars = ["BMW 320i ツーリング (E91)", "TOYOTA ランドクルーザー300"];
   const [selectedCar, setSelectedCar] = useState(cars[0]);
 
   const [dateRange, setDateRange] = useState<any>({});
@@ -486,7 +486,13 @@ if (data) {
           {isLoggedIn && r.user === currentUser && isActive && !isFinished && (
   <Button
     variant="outline"
-    className="transition active:scale-95"
+     className="
+      bg-green-600
+      text-white
+      hover:bg-green-700
+      active:bg-green-800
+      transition-colors
+    "
     onClick={async () => {
       const nowDate = new Date();
       const nowIso = nowDate.toISOString();
