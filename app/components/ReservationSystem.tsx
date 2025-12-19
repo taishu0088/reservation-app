@@ -443,13 +443,21 @@ if (data) {
       const isFinished = now > r.end;
 
       return (
-        <div
-          key={r.id}
-          className={`border p-3 rounded flex justify-between items-center transition-colors
-            ${isActive ? "bg-green-200 border-green-400" : ""}
-            ${isFinished ? "bg-gray-200 text-gray-500" : ""}
-          `}
-        >
+       <div
+  key={r.id}
+  className={`border p-3 rounded flex justify-between items-center transition-colors
+    ${
+      returningId === r.id
+        ? "bg-gray-200 text-gray-500"
+        : isFinished
+        ? "bg-gray-200 text-gray-500"
+        : isActive
+        ? "bg-green-200 border-green-400"
+        : ""
+    }
+  `}
+>
+
           <div>
             <p>利用者：{r.user}</p>
            <p>
