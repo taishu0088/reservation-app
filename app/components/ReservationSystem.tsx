@@ -494,6 +494,11 @@ if (data) {
 
           {/* 利用中：返却ボタン */}
           {isLoggedIn && r.user === currentUser && isActive && !isFinished && (
+             <>
+    {/* ←★ここに表示される */}
+    <p className="text-xs text-yellow-700 mb-1">
+      ⛽ ガソリンは満タンで返却してください
+    </p>
             
 <Button
   disabled={returningId === r.id}
@@ -533,6 +538,7 @@ if (data) {
 >
   {returningId === r.id ? "返却中..." : "返却"}
 </Button>
+</>
 )}
 
         </div>
