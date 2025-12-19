@@ -100,12 +100,10 @@ export default function ReservationSystem() {
 
 
 useEffect(() => {
-  const timer = setInterval(() => {
-    setNow(new Date());
-  }, 60 * 1000);
-
+  const timer = setInterval(() => setNow(new Date()), 1000); // ← 1秒
   return () => clearInterval(timer);
 }, []);
+
 
   useEffect(() => {
   const fetchReservations = async () => {
@@ -500,12 +498,10 @@ if (data) {
 <Button
   disabled={returningId === r.id}
     //背景色
-  className={`
-  border p-3 rounded flex justify-between items-center transition-colors
-  ${returningId === r.id ? "bg-gray-200 text-gray-500" : ""}
-  ${!returningId && isActive && !isFinished ? "bg-green-200 border-green-400" : ""}
-  ${isFinished ? "bg-gray-200 text-gray-500" : ""}
+ className={`px-4 py-2 rounded-xl font-bold text-white transition active:scale-95
+  ${returningId === r.id ? "bg-gray-400" : "bg-green-600 hover:bg-green-700"}
 `}
+
 
 
   onClick={async () => {
@@ -513,6 +509,7 @@ if (data) {
     setReturningId(r.id);
 
     const nowDate = new Date();
+    setNow(nowDate);               // ← 追加（これで即「利用中判定」が切り替わる）
     const nowIso = nowDate.toISOString();
 
     // ② 画面を即更新
@@ -530,7 +527,7 @@ if (data) {
        // ④ 1.5秒後に返却中解除（←ここが肝）
       setTimeout(() => {
         setReturningId(null);
-      }, 1200);
+      }, 1000);
 
       }}
 >
