@@ -441,13 +441,15 @@ if (data) {
       const isBefore = now < r.start;
       const isActive = now >= r.start && now <= r.end;
       const isFinished = now > r.end;
+      const isReturning = returningId === r.id;
+
 
       return (
        <div
   key={r.id}
   className={`border p-3 rounded flex justify-between items-center transition-colors
     ${
-      returningId === r.id
+      isReturning
         ? "bg-gray-200 text-gray-500"
         : isFinished
         ? "bg-gray-200 text-gray-500"
@@ -466,7 +468,10 @@ if (data) {
   {r.end.toLocaleDateString()} {r.end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
 </p>
 
-
+            {isReturning && (
+              <p className="text-sm text-gray-600">返却中…</p>
+            )}
+            
             {isActive && (
               <p className="text-sm font-bold text-green-700">▶ 利用中</p>
             )}
