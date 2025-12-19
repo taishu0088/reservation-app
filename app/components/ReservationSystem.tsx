@@ -501,15 +501,12 @@ if (data) {
   disabled={returningId === r.id}
     //背景色
   className={`
-  border p-3 rounded flex justify-between items-center transition-colors    
-  ${
-    isReturning || isFinished
-      ? "bg-gray-200 text-gray-500"
-      : isActive
-      ? "bg-green-200 border-green-400"
-      : ""
-  }
+  border p-3 rounded flex justify-between items-center transition-colors
+  ${returningId === r.id ? "bg-gray-200 text-gray-500" : ""}
+  ${!returningId && isActive && !isFinished ? "bg-green-200 border-green-400" : ""}
+  ${isFinished ? "bg-gray-200 text-gray-500" : ""}
 `}
+
 
   onClick={async () => {
     // ① 押した瞬間にグレー固定
@@ -533,7 +530,7 @@ if (data) {
        // ④ 1.5秒後に返却中解除（←ここが肝）
       setTimeout(() => {
         setReturningId(null);
-      }, 1500);
+      }, 1200);
 
       }}
 >
