@@ -441,8 +441,8 @@ if (data) {
     {sortedReservations.map((r) => {
       const isBefore = now < r.start;
       const isActive = now >= r.start && now <= r.end;
-      const isFinished = now > r.end;
       const isReturning = returningId === r.id;
+      const isFinished = isReturning || now > r.end;
 
 
       return (
@@ -494,16 +494,23 @@ if (data) {
             </Button>
           )}
 
-          {/* 利用中：返却 */}
+          {/* 利用中：返却ボタン */}
           {isLoggedIn && r.user === currentUser && isActive && !isFinished && (
             
 <Button
   disabled={returningId === r.id}
-  className={`text-white transition active:scale-95
-    ${returningId === r.id
-      ? "bg-gray-400 cursor-not-allowed"
-      : "bg-green-600 hover:bg-green-700 active:bg-green-800"}
-  `}
+    //背景色
+  className={`
+  border p-3 rounded flex justify-between items-center transition-colors    
+  ${
+    isReturning || isFinished
+      ? "bg-gray-200 text-gray-500"
+      : isActive
+      ? "bg-green-200 border-green-400"
+      : ""
+  }
+`}
+
   onClick={async () => {
     // ① 押した瞬間にグレー固定
     setReturningId(r.id);
@@ -523,14 +530,15 @@ if (data) {
       .from("reservation")
       .update({ end_time: nowIso })
       .eq("id", r.id);
-   }}
+       // ④ 1.5秒後に返却中解除（←ここが肝）
+      setTimeout(() => {
+        setReturningId(null);
+      }, 1500);
+
+      }}
 >
   {returningId === r.id ? "返却中..." : "返却"}
 </Button>
-
-
-
-
 )}
 
         </div>
