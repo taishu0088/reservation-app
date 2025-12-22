@@ -67,6 +67,8 @@ export default function ReservationSystem() {
     けいた: "keita225",
     たいしゅう: "h0817",
     とうや: "toya03",
+    たいしゅうパパ: "dai3880",
+    
   };
 
   const handleLogin = () => {
